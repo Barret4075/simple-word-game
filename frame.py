@@ -2,10 +2,9 @@ from os import system
 import os
 import sys
 import pickle
-from time import sleep
+from anyio import sleep
 from colorama import Fore, Back, Style, init
 import keyboard
-import numpy as np
 from function import *
 from class_def import *
 
@@ -56,7 +55,6 @@ def play():
     global game
     game=gameBoard()
     game.start_game()
-    keyboard.wait('esc')
 
 
 def saves_interface():
@@ -80,7 +78,7 @@ def main_interface():
     while True:
         system('cls')
         print(Fore.LIGHTCYAN_EX+"欢迎来到Word Game\n1.游戏开始\n2.加载存档\n3.退出游戏")
-        key=get_keys(1,2,3)
+        key=get_keys(1,2,3,'e')
         if key==1:
             play()
         elif key==2:
@@ -89,11 +87,13 @@ def main_interface():
                 game.continue_game()
         elif key==3:
             sys.exit()
+        elif key=='e':
+            game=raise_editor(gameBoard())
 if __name__ == "__main__":
     if not os.path.exists('word_game'):
-        os.mkdir('word_game/saves')
+        os.mkdir('./word_game')
     if not os.path.exists('word_game/saves'):
-        os.mkdir('word_game/saves')
+        os.mkdir('./word_game/saves')
     keyboard.on_press(on_press)
     main_interface()
-#w21311212222212211m51012201111111111
+#
