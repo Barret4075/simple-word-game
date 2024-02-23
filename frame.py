@@ -75,6 +75,7 @@ def saves_interface():
             game=pickle.load(f)
     return game
 def main_interface():
+    global game
     while True:
         system('cls')
         print(Fore.LIGHTCYAN_EX+"欢迎来到Word Game\n1.游戏开始\n2.加载存档\n3.退出游戏")

@@ -1,6 +1,5 @@
 import os
 import pickle
-import sys
 from colorama import Fore, init, Back, Style
 from os import system
 from time import sleep
@@ -60,7 +59,7 @@ def get_keys(*values):
     return key
 
 
-def get_choice(ele_list: list, *arg, command_info='', num=8):
+def get_choice(ele_list: list, *arg, command_info='',num=8):
     """选择列表中的选项和*arg中的按键\ncommand_info是命令提示"""
     select = 0
     page = 0
@@ -69,9 +68,9 @@ def get_choice(ele_list: list, *arg, command_info='', num=8):
         system("cls")
         for i in range(len(splitted_list[page])):
             if i==select:
-                print(Back.CYAN+ str(i + num * page) + " . " + str(splitted_list[page][i]))
+                print(Back.CYAN+ str(i + num * page) + "." + str(splitted_list[page][i]))
             else:
-                print(str(i + num * page) + " . " + str(splitted_list[page][i]))
+                print(str(i + num * page) + "." + str(splitted_list[page][i]))
         print("\n" * (num - 1 - len(splitted_list[page])))
         print(Fore.RED + "---------------")
         print(command_info)
@@ -102,7 +101,7 @@ def get_choice(ele_list: list, *arg, command_info='', num=8):
                     page += 1
                     select = 0
             continue
-        return ele_list[page * num + select], key
+        return page * num + select, key
 
 
 # 信息输出
@@ -181,6 +180,7 @@ def rise_menu(game):
             saveGame(game)
             return False
         else:
+            print("退出游戏中 ... ...")
             return False
         return None
 
@@ -197,7 +197,6 @@ def saveGame(game, path="word_game/saves/"):
         pickle.dump(game, f)
     print("存档成功,存档号", choose)
     sleep(2)
-
 
 
 #内置编辑器
@@ -226,29 +225,51 @@ def raise_editor(game):
                 game = add_frame(game)
         if key == 0:
             break
+    return game
 
 
 def change_frame_info(game, frame_name):#未完成
-    print("Frame Info:")
-    print("内部名字：", frame_name)
-    print("场景名", game.big_map[frame_name].name_zh)
-    print("描述", game.big_map[frame_name].describe)
+    while True:
+        choice,option=get_choice([f"修改内部名:\t{frame_name}",
+                    f"修改场景名:\t{game.big_map[frame_name].name_zh}",
+                    f"修改描述:\t{game.big_map[frame_name].describe}",
+                    f"删除场景",],
+                    [1,2],command_info="1.确认\n2.返回"
+                    )
+        if option==2:
+            break
+        if choice==0:
+            print("无法修改内部名")
+        elif choice==1:
+            game.big_map[frame_name].change_frame_name_zh(input("请输入新的名字："))
+            print("修改成功！")
+            sleep(1.2)
+        elif choice==2:
+            game.big_map[frame_name].change_frame_describe(input("请输入新的名字："))
+            print("修改成功！")
+            sleep(1.2)
+        elif choice==3:
+            game.big_map[frame_name].clean_all_connect()
+            game.del_frame(frame_name)
+            print(Back.RED+'任意键继续')
+            get_keys('any')
+            break
     return game
 
 
 
 def frame_info(game):
-    frame_list = list(
-        zip(game.big_map.keys(), list(map(lambda x: x.name_zh, game.big_map.values())))
-    )
 
     while True:
-        select_frame_name, key = get_choice(
+        frame_list = list(
+            zip(game.big_map.keys(), list(map(lambda x: x.name_zh, game.big_map.values())))
+        )
+        select_frame_index, key = get_choice(
             frame_list,
             range(5),
             command_info="1.查看场景信息\n2.修改场景信息(功能未完成)\n3.修改场景连接(功能未完成)\n4.删除此场景(功能未完成)\n0.返回",
         )
-        select_frame_name = select_frame_name[0]
+        select_frame_name = frame_list[select_frame_index][0]
         select_frame = game.big_map[select_frame_name]
         if key == 1:
             system("cls")

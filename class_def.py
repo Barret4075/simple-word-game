@@ -21,10 +21,42 @@ class Key:
         else:
             return False
 
-class interactObject:
-    def __init__(self,name,describe=''):
-        self.name =name
-        self.describe =describe
+class interactDialogue:
+    def __init__(self,summery:str='',dialogue:list[str]=['']):
+        """格式 List[list[
+            summery:str,
+            dialogue:list,
+            reply:Dict{
+                tuple[reply:str,summery:str]
+                }
+        ]]"""
+        self.dialogue=[[summery,dialogue,{}]]
+    def add_dialogue(self,summery:str,talking: list):
+        """summery:总结\ntalking:对话\nindex:添加到哪个对话"""
+        self.dialogue.append([summery,talking,{}])
+    def add_word(self,summery,word):
+        ind=(i for i,ele in enumerate(self.dialogue) if ele[0]==summery)
+        if len(ind)==0:
+            return False
+        ind=ind[0]
+        self.dialogue[ind][1].append(word)
+    def del_word(self,summery,ind):
+        ind=(i for i,ele in enumerate(self.dialogue) if ele[0]==summery)
+        if len(ind)==0:
+            return False
+        ind=ind[0]
+        del self.dialogue[ind][1][ind]
+
+    def add_reply(self,dialogue:str,reply: list[tuple[str,str]]):
+        """dialogue:对话名(总结)\n对话回复机制格式[(回复1，下一个对话),(回复2，下一个对话),(回复3，下一个对胡)]"""
+        for i in self.dialogue:
+            if i[0]==dialogue:
+                i[2].update({i:j for i,j in reply})
+        else:
+            return None
+    def trig(self):
+
+        pass
 class actors:
     def __init__(self, type="player", site=None) -> None:
         # 固定属性
@@ -94,7 +126,16 @@ class page:
         self.interaction_options=[]
         self.road_info={}#Key and time consumption
         self.leave_able = True
-    # 初始化设置
+    #更改设置
+    def change_frame_name_zh(self,new_name:str):
+        self.name_zh=new_name
+    def change_frame_describe(self,new_describe:str):
+        self.new_describe=new_describe
+    def clean_all_connect(self):
+        for frame in self.frame_options:
+            frame.frame_options.remove(self)
+            del frame.road_info[self.name_en]
+    # 场景设置
     def connect_frame(self, frame: object,time_spend=20):
         """连接两个场景"""
         if frame not in self.frame_options:
@@ -103,7 +144,7 @@ class page:
         if self not in frame.frame_options:
             frame.frame_options.append(self)
             frame.road_info.update({self.name_en:{'Key':Key(None),'time spend':time_spend}})
-    # def update_
+    
     def add_oneway_lock(self,Destination: object,password):
         """锁定某个场景"""
         self.road_info[Destination.name_en]['Key']=Key(password)
@@ -114,7 +155,7 @@ class page:
     def add_in_trigger(self, dialogue: list):
         """新增对话触发"""
         self.in_trigger.append(trigger.dialogue_trigger(dialogue))
-    # 交互设置
+    
     def show_frame_info(self):
         sleep(0.01)
         system("cls")
@@ -125,15 +166,33 @@ class page:
         sleep(0.01)
         print("")
 
+    #路线交互
     def show_frame_options(self,only_show_option=False):
         if only_show_option:
             print(Fore.BLUE + "现在要去到哪里？")
         print(*["\t%d.%s\t-%2d分钟\n" % (i, option.name_zh,self.road_info[option.name_en]['time spend'])for i, option in enumerate(self.frame_options, 1)])
+    def get_frame_options(self):
+        return [(option.name_zh,self.road_info[option.name_en]['time spend']) for option in self.frame_options]
+    #场景交互
+    def add_interact_option(self,option):
+        self.frame_options.append(option)
+    def show_interact_options(self):
+        """返回options个数"""
+        # l=len(self.interaction_options)
+        choose_list=['q','w','e','r','t','y','u','i','o','p']
+        if self.interaction_options:
+            print(f"{choose_list[i]:2<}{option.name}" for i,option in enumerate(self.interaction_options))
+        return len(self.interaction_options)
+    def get_interact_options(self):
+        """返回options列表"""
+        return [option.name for option in self.interaction_options]
 class trigger:
     class dialogue_trigger:
         def __init__(self,dialogue: list):
             self.dialogue=dialogue
             self.dialogue[0]+='  '
+        def __bool__(self):
+            return
         def trig(self):
             '''触发,返回值bool:是否跳过其他触发器'''
             for i in range(len(self.dialogue)-1):
@@ -261,12 +320,83 @@ class gameBoard:
         self.reach_frame(self.current_frame)
     def getKey(self,*arg):
         '''游戏中读取按键，必要时唤起菜单，返回False时标记退出游戏板'''
+        k=get_keys(*arg,'m')
+        if k=='m':
+            return rise_menu(self)
+        else:
+            return k
+    def get_menu_choice(self,element:list[list],option:list[list],num=8):
+        while [] in element:
+            del option[element.index([])]
+            element.remove([])
+        while [] in option:
+            del element[option.index([])]
+            option.remove([])
+        length_ele=list(map(len,element))
+        length_opt=list(map(len,option))
+        menu=0
+        page=0
+        select=0
+        splitted_list = [[ele_list[i : i + num] for i in range(0, len(ele_list), num)]for ele_list in element]
         while True:
-            k=get_keys(*arg,'m')
-            if k=='m':
+            system("cls")
+            c_len=len(splitted_list[menu][page])
+            for i in range(c_len):
+                if i==select:
+                    print(Back.CYAN+ str(i + num * page) + "." + str(splitted_list[menu][page][i]))
+                else:
+                    print(str(i + num * page) + "." + str(splitted_list[menu][page][i]))
+            print("\n" * (num - 1 - len(splitted_list[menu][page])))
+            print(Fore.RED + "---------------")
+            print(*[f'{str(i):>2}.{str(ele)}' for i,ele in enumerate(option[menu],1)],sep='\n')
+            key = get_keys(range(1,1+length_opt[menu]), ["up", "down", "left", "right",'q','e','m'])
+            if key=='m':
                 return rise_menu(self)
-            else:
-                return k
+            elif key=='q':
+                menu-=1
+                if menu<0:
+                    menu+=len(element)
+                page=select=0
+            elif key=='e':
+                menu+=1
+                if menu>=len(element):
+                    menu-=len(element)
+                page=select=0
+            elif key == "up":
+                if select == 0 and page != 0:
+                    select = num - 1
+                    page -= 1
+                elif select != 0 or page != 0:
+                    select -= 1
+            elif key == "down":
+                if select + page * num == length_ele[menu] - 1:
+                    pass
+                elif select == num - 1:
+                    select = 0
+                    page += 1
+                else:
+                    select += 1
+            elif key == "left":
+                if page == 0:
+                    select = 0
+                else:
+                    page -= 1
+                    select = 0
+            elif key == "right":
+                if page != len(splitted_list[menu]) - 1:
+                    page += 1
+                    select = 0
+            if key in ["up", "down", "left", "right","q","e"]:
+                continue
+            return menu,page*num+select,key
+    #编辑操作
+    def del_frame(self,frame_name_en):
+        if frame_name_en!='Roadside':
+            del self.big_map[frame_name_en]
+            print('删除完成')
+        else:
+            print('无法删除开局场景')
+        sleep(1.2)
     def reach_frame(self,frame):
         self.current_frame=frame
         self.player.site=frame
@@ -277,14 +407,37 @@ class gameBoard:
                 if triggers.trig():
                     break
             self.current_frame.show_frame_info()
-            self.current_frame.show_frame_options()
-            frame_count=len(self.current_frame.frame_options)
-            num=self.getKey(range(1,frame_count+1))
+            # self.current_frame.show_frame_options()
+            # length=self.current_frame.show_interact_options()
+
+            # choose_list=['q','w','e','r','t','y','u','i','o','p']
+            # frame_count=len(self.current_frame.frame_options)
+            # num=self.getKey(range(1,frame_count+1),choose_list[:length])
+            k=self.get_menu_choice(
+                [[f'{e1:<7}\t{e2}分钟' for e1,e2 in self.current_frame.get_frame_options()],
+                self.current_frame.get_interact_options()],
+                [['前往'],
+                ['交互']]
+            )
+            if k==False:
+                break
+            if k is None:
+                continue
+            menu,select,option=k
+            if menu==0:
+                #option=0
+                self.goto_frame(select)
+            elif menu==1:
+                pass
+            continue
             if num==False:
                 break
             if num is None:
                 continue
-            self.goto_frame(num)
+            if isinstance(num,int):
+                self.goto_frame(num)
+            elif isinstance(num,str):
+                self.trig_interact_option(choose_list.index(num))
     def goto_frame(self, num):
         destination_frame=self.current_frame.frame_options[num-1]
         if not self.current_frame.leave_able:
@@ -302,3 +455,5 @@ class gameBoard:
         if leave_site:
             self.addTime(self.current_frame.road_info[destination_frame.name_en]['time spend'])
             self.current_frame=destination_frame
+    def trig_interact_option(self,num):
+        self.current_frame.interaction_options[num].trig()
