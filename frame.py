@@ -53,7 +53,8 @@ game=None
 
 def play():
     global game
-    game=gameBoard()
+    if not game:
+        game=gameBoard()
     game.start_game()
 
 
@@ -83,13 +84,13 @@ def main_interface():
         if key==1:
             play()
         elif key==2:
-            game=saves_interface()
-            if game:
-                game.continue_game()
+            game_saved=saves_interface()
+            if game_saved:
+                game_saved.continue_game()
         elif key==3:
             sys.exit()
         elif key=='e':
-            game=raise_editor(gameBoard())
+            game=raise_editor(game if game else gameBoard())
 if __name__ == "__main__":
     if not os.path.exists('word_game'):
         os.mkdir('./word_game')
@@ -97,4 +98,4 @@ if __name__ == "__main__":
         os.mkdir('./word_game/saves')
     keyboard.on_press(on_press)
     main_interface()
-#
+#e

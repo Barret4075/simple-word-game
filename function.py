@@ -221,8 +221,7 @@ def raise_editor(game):
                 if temp:
                     game = temp
             elif key1 == 2:
-                continue
-                game = add_frame(game)
+                game.add_frame()
         if key == 0:
             break
     return game
@@ -241,7 +240,7 @@ def change_frame_info(game, frame_name):#未完成
         if choice==0:
             print("无法修改内部名")
         elif choice==1:
-            game.big_map[frame_name].change_frame_name_zh(input("请输入新的名字："))
+            game.big_map[frame_name].name_zh=input("请输入新的名字：")
             print("修改成功！")
             sleep(1.2)
         elif choice==2:
@@ -259,7 +258,6 @@ def change_frame_info(game, frame_name):#未完成
 
 
 def frame_info(game):
-
     while True:
         frame_list = list(
             zip(game.big_map.keys(), list(map(lambda x: x.name_zh, game.big_map.values())))

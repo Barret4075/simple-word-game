@@ -166,6 +166,8 @@ class page:
         sleep(0.01)
         print("")
 
+    def frame_info(self):
+        return f'{self.name_zh}\n{self.describe}'
     #路线交互
     def show_frame_options(self,only_show_option=False):
         if only_show_option:
@@ -325,7 +327,7 @@ class gameBoard:
             return rise_menu(self)
         else:
             return k
-    def get_menu_choice(self,element:list[list],option:list[list],num=8):
+    def get_menu_choice(self,element:list[list],option:list[list],num=8,pre_info=None):
         while [] in element:
             del option[element.index([])]
             element.remove([])
@@ -340,6 +342,7 @@ class gameBoard:
         splitted_list = [[ele_list[i : i + num] for i in range(0, len(ele_list), num)]for ele_list in element]
         while True:
             system("cls")
+            print(pre_info)
             c_len=len(splitted_list[menu][page])
             for i in range(c_len):
                 if i==select:
@@ -397,6 +400,18 @@ class gameBoard:
         else:
             print('无法删除开局场景')
         sleep(1.2)
+    def add_frame(self,frame_name_en):
+        self.big_map.update({frame_name_en:page(name_en=frame_name_en)})
+    def connect_frame(self,site1:str,site2:str,time_spend:int=20):
+        if site1 not in self.big_map.keys():
+            print(f"场景{site1}不存在")
+            sleep(1)
+            return False
+        if site1 not in self.big_map.keys():
+            print(f"场景{site2}不存在")
+            sleep(1)
+            return False
+        self.big_map[site1].connect_frame(self.big_map[site2],time_spend)
     def reach_frame(self,frame):
         self.current_frame=frame
         self.player.site=frame
@@ -407,17 +422,12 @@ class gameBoard:
                 if triggers.trig():
                     break
             self.current_frame.show_frame_info()
-            # self.current_frame.show_frame_options()
-            # length=self.current_frame.show_interact_options()
-
-            # choose_list=['q','w','e','r','t','y','u','i','o','p']
-            # frame_count=len(self.current_frame.frame_options)
-            # num=self.getKey(range(1,frame_count+1),choose_list[:length])
             k=self.get_menu_choice(
                 [[f'{e1:<7}\t{e2}分钟' for e1,e2 in self.current_frame.get_frame_options()],
                 self.current_frame.get_interact_options()],
                 [['前往'],
-                ['交互']]
+                ['交互']],
+                pre_info=self.current_frame.frame_info()
             )
             if k==False:
                 break
@@ -425,26 +435,18 @@ class gameBoard:
                 continue
             menu,select,option=k
             if menu==0:
-                #option=0
+                option==0
                 self.goto_frame(select)
             elif menu==1:
                 pass
             continue
-            if num==False:
-                break
-            if num is None:
-                continue
-            if isinstance(num,int):
-                self.goto_frame(num)
-            elif isinstance(num,str):
-                self.trig_interact_option(choose_list.index(num))
     def goto_frame(self, num):
-        destination_frame=self.current_frame.frame_options[num-1]
+        dest_frame=self.current_frame.frame_options[num]
         if not self.current_frame.leave_able:
             print('无法离开此地')
             sleep(1.3)
             return
-        if self.current_frame.road_info.get(destination_frame.name_en).get('key',Key(None)) not in self.player.inventory:
+        if self.current_frame.road_info.get(dest_frame.name_en).get('key',Key(None)) not in self.player.inventory:
             print('没有对应的钥匙')
             sleep(1.3)
             return
@@ -453,7 +455,7 @@ class gameBoard:
         else:
             leave_site = True
         if leave_site:
-            self.addTime(self.current_frame.road_info[destination_frame.name_en]['time spend'])
-            self.current_frame=destination_frame
+            self.addTime(self.current_frame.road_info[dest_frame.name_en]['time spend'])
+            self.current_frame=dest_frame
     def trig_interact_option(self,num):
         self.current_frame.interaction_options[num].trig()
